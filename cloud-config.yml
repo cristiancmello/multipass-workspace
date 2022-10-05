@@ -1,0 +1,33 @@
+package_update: true
+package_upgrade: true
+
+users:
+  - default
+  - name: dev
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ssh-ed25519 ...
+
+write_files:
+  - path: /etc/netplan/60-bridge.yaml
+    permissions: '0644'
+    content: |
+      network:
+        version: 2
+        ethernets:
+          eth1:                    # this is the interface name from above
+            dhcp4: true
+            dhcp4-overrides:       # this is needed so the default gateway
+              route-metric: 200    # remains with the first interface
+
+runcmd:
+  - " ~~~~~~ DOCKER INSTALLATION ~~~~~~ "
+  - apt-get install -y ca-certificates curl gnupg lsb-release
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - sudo usermod -aG docker dev
