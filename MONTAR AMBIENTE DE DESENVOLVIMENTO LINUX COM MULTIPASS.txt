@@ -1,0 +1,100 @@
+1. Instale o Multipass 
+Note: You need Windows 10 Pro/Enterprise/Education v 1803 or later, or any Windows 10 with VirtualBox
+
+2. Iniciar uma VM (Instância) baseado em Ubuntu 22.04 LTS
+
+$ multipass launch --name workspace
+
+2.1 Iniciar uma VM (Instância) Ubuntu 22.04 LTS e Infra de Rede Wi-Fi (modo Bridge)
+Modo Bridge: permite ligar a Instância diretamente à rede, podendo publicar serviços na Internet
+bastante apenas configurando portforwarding no Roteador.
+
+$ multipass launch --network Wi-Fi --name workspace                      # test: pass
+$ multipass launch --network Wi-Fi --name workspace --disk 20G --mem 4G  # test: com 20 GB de storage e 2 GB de RAM
+$ multipass launch --network Wi-Fi --name workspace --disk 20G --mem 4G --cloud-init cloud-config.yml # com suporte a automacao do cloud-init
+
+2.2 Liste as configurações de rede suportadas pelo Multipass
+
+$ multipass networks # test: pass
+
+2.3 Deseja alterar memória, disco ou quantidade de CPUs? Execute
+
+$ multipass set local.workspace.memory=2G # test: pass   Opções: local.workspace.(memory|disk|cpus)
+
+3. Criar usuario 'cristian' com senha para apoiar desenvolvimento. 
+
+3.1 Acesse a instancia por meio do Shell
+
+$ multipass shell workspace
+
+3.2 Edite o arquivo /etc/ssh/sshd_config
+
+$ sudo nano /etc/ssh/sshd_config
+
+3.3 Substitua a expressão "PasswordAuthentication no" por "PasswordAuthentication yes". Salve o arquivo.
+
+3.4 Reinicie o SSH Server
+
+$ sudo service ssh restart
+
+4. Crie o usuario 'workspace'
+
+$ sudo adduser workspace
+
+4.1 Adicione o usuario 'workspace' ao grupo de sudo
+
+$ sudo adduser workspace sudo
+
+5. Pare todas as instancias e inicie novamente
+
+$ multipass stop --all
+$ multipass start workspace
+
+6. Gera uma chave RSA ou ed25519 e faça um append da chave publica .pub (criado no seu Windows) no arquivo ~/.ssh/authorized_keys
+dentro da Instancia. O append precisa ser feito porque existe uma chave publica registrada
+nesse arquivo que o multipass já usa para seu acesso ssh via usuario 'ubuntu'.
+
+7. Crie um arquivo 'config' na pasta ~/.ssh do Windows. Devido a problema de permissão no Windows,
+mude as permissões nas propriedades.
+
+7.1 Clique com botão direito no arquivo 'config' e inicie 'Properties'. 
+Na aba Security, clique em 'Advanced' abaixo da lista 'Permissions for Cristian C. M.'.
+Clique em 'Disable inheritance' e procure desabilitar para Todos. Adicione o usuario do seu Windows.
+Dê um OK em todas as janelas.
+
+8. Para acessar por SSH, apenas obtenha o Endereço IP da Instancia e execute, como exemplo
+
+$ ssh workspace@172.29.76.112
+
+Será pedida sua senha.
+
+OBSERVAÇÃO: eu precisei reiniciar para obter o endereço IP gerado externamente, exemplo '192.168.15.25'
+Depois disso, você pode acessar na sua rede local ou publicar portas no seu roteador fazendo portforwarding
+
+
+## Tornar IP Estático
+
+1. Crie um arquivo com o comando
+
+$ sudo vim /etc/netplan/90-static.yaml
+
+network:
+    ethernets:
+        eth0:
+            addresses:
+                - 172.30.93.161/20
+        eth1:
+            addresses:
+                - 192.168.15.26/24
+    version: 2
+
+OBSERVAÇÃO: obtenha os IP/CIDR com o comando dentro da instancia: $ ip addr
+
+2. Salve o arquivo e reinicie a instancia. Observe que agora toda vez que reiniciar a instancia,
+seus IPs estarão estáticos.
+
+
+## Acessar o Endpoint por Domain Name 
+
+Va no arquivo "C:\Windows\System32\drivers\etc\hosts.ics". Observe que o Windows gera um domain para facilitar
+o acesso remoto à instancia. Dica: a URL é sempre "workspace.mshome.net"
