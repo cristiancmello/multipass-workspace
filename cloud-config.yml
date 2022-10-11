@@ -8,7 +8,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     ssh_authorized_keys:
-      - ssh-ed25519 ...
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL5BZ+QxWYogWp73Xhg1aEVv5UJJFwlxxjPVcdOQtcAw dev@workspace.com
 
 write_files:
   - path: /etc/netplan/60-bridge.yaml
@@ -23,7 +23,7 @@ write_files:
               route-metric: 200    # remains with the first interface
 
 runcmd:
-  - " ~~~~~~ DOCKER INSTALLATION ~~~~~~ "
+  # DOCKER INSTALLATION
   - apt-get install -y ca-certificates curl gnupg lsb-release
   - mkdir -p /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -31,3 +31,47 @@ runcmd:
   - apt-get update
   - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
   - sudo usermod -aG docker dev
+
+  # DEVELOPMENT DEPENDENCIES
+  - apt install -y build-essential
+
+  # UTILS
+  - apt install -y zip unzip net-tools
+
+  # JAVA 17
+  - apt install -y openjdk-17-jdk
+  - echo 'export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"' >> /etc/profile
+  - echo 'export PATH="$PATH:$JAVA_HOME/bin"' >> /etc/profile
+
+  # MAVEN 3.8
+  - curl https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz --output apache-maven-3.8.6-bin.tar.gz
+  - tar -xvf apache-maven-3.8.6-bin.tar.gz
+  - mv apache-maven-3.8.6 /opt/
+  - rm -f apache-maven-3.8.6-bin.tar.gz
+  - echo 'export M2_HOME="/opt/apache-maven-3.8.6"' >> /etc/profile
+  - echo 'export PATH="$PATH:$M2_HOME/bin"' >> /etc/profile
+
+  # GRADLE 7.5
+  - wget -4c https://services.gradle.org/distributions/gradle-7.5.1-bin.zip
+  - unzip -d /opt/gradle gradle-7.5.1-bin.zip
+  - rm -f gradle-7.5.1-bin.zip
+  - echo 'export GRADLE_HOME="/opt/gradle/gradle-7.5.1"' >> /etc/profile
+  - echo 'export PATH="$PATH:$GRADLE_HOME/bin"' >> /etc/profile
+
+  # NVM 0.39
+  - su "dev" -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash"
+  - su "dev" -c "source ~/.bashrc"
+
+  # NodeJS 16.17.1 LTS
+  - su "dev" -c "source /home/dev/.nvm/nvm.sh; nvm install v16.17.1"
+  - su "dev" -c "/home/dev/.nvm/versions/node/v16.17.1/bin/node /home/dev/.nvm/versions/node/v16.17.1/bin/npm i -g yarn"
+
+  # Generate Report
+  - su "dev" -c "docker --version >> /home/dev/installations-report.log"
+  - su "dev" -c "java --version >> /home/dev/installations-report.log"
+  - su "dev" -c "/opt/apache-maven-3.8.6/bin/mvn --version >> /home/dev/installations-report.log"
+  - su "dev" -c "/opt/gradle/gradle-7.5.1/bin/gradle --version >> /home/dev/installations-report.log"
+  - su "dev" -c "source /home/dev/.nvm/nvm.sh; nvm --version >> /home/dev/installations-report.log"
+  - su "dev" -c "echo NodeJS $(/home/dev/.nvm/versions/node/v16.17.1/bin/node --version) >> /home/dev/installations-report.log"
+  - su "dev" -c "echo NPM $(/home/dev/.nvm/versions/node/v16.17.1/bin/node /home/dev/.nvm/versions/node/v16.17.1/bin/npm -version) >> /home/dev/installations-report.log"
+  - su "dev" -c "echo Yarn $(/home/dev/.nvm/versions/node/v16.17.1/bin/node /home/dev/.nvm/versions/node/v16.17.1/bin/yarn -version) >> /home/dev/installations-report.log"

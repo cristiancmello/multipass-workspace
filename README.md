@@ -7,7 +7,7 @@ Multipass Workspace with Ubuntu 22.04 LTS and Docker
 * Network type: Wi-Fi interface
 
 ```sh
-multipass launch --network Wi-Fi --name workspace --disk 20G --mem 4G --cloud-init cloud-config.yml
+multipass launch --network Wi-Fi --name workspace --disk 20G --mem 4G --cpus 16 --cloud-init cloud-config.yml
 ```
 
 ## SSH (Recommended)
@@ -44,4 +44,15 @@ multipass stop workspace
 
 ```sh
 multipass delete workspace --purge
+```
+
+## Update RAM, CPU, Storage
+
+* Template: `local.<instance_name>.(cpus|disk|memory)`
+
+### Update RAM
+
+```sh
+multipass stop workspace
+multipass set local.workspace.memory=4G
 ```
